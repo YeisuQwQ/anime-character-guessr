@@ -11,7 +11,6 @@ import GameInfo from '../components/GameInfo';
 import Timer from '../components/Timer';
 import FeedbackPopup from '../components/FeedbackPopup';
 import TagContributionPopup from '../components/TagContributionPopup';
-import logCollector from '../utils/logCollector';
 import '../styles/game.css';
 import '../styles/SinglePlayer.css';
 import '../styles/social.css';
@@ -148,29 +147,6 @@ function SinglePlayer() {
       isMounted = false;
     };
   }, []);
-
-  // Register app state provider for diagnostic logs
-  useEffect(() => {
-    logCollector.setAppStateProvider(() => ({
-      mode: 'singleplayer',
-      finishInit,
-      initFailed,
-      gameEnd,
-      isGuessing,
-      guessesLeft,
-      guessesCount: guesses.length,
-      hasAnswerCharacter: Boolean(answerCharacter),
-      answerCharacterId: answerCharacter?.id || null,
-      answerCharacterName: answerCharacter?.name || null,
-      subjectSearchEnabled: currentGameSettings?.subjectSearch ?? true,
-      maxAttempts: currentGameSettings?.maxAttempts,
-      timeLimit: currentGameSettings?.timeLimit
-    }));
-
-    return () => {
-      logCollector.setAppStateProvider(null);
-    };
-  }, [finishInit, initFailed, gameEnd, isGuessing, guessesLeft, guesses.length, answerCharacter, currentGameSettings]);
 
   const handleCharacterSelect = async (character) => {
     if (isGuessing || !answerCharacter) return;
