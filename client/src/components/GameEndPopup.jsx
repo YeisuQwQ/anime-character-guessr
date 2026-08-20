@@ -1,8 +1,5 @@
 import '../styles/popups.css';
-import subaruIcon from '/assets/subaru.jpg';
-import { useState } from 'react';
 import { idToTags } from '../data/id_tags';
-import { getLocalLeaderboard, addLocalLeaderboardEntry } from '../utils/localLeaderboard';
 
 function renderSummaryWithTags(summary, text) {
   if (!summary || typeof summary !== 'string') return summary;
@@ -103,60 +100,27 @@ const GAME_END_TEXT = {
   zh: {
     win: '🎉 给你猜对了，有点东西',
     lose: '😢 已经结束咧',
-    reportBug: '反馈Bug',
     appearances: '出演作品：',
     moreWorks: (count) => `...等 ${count} 部作品`,
     tags: '角色标签：',
     summary: '角色简介：',
     maskAriaLabel: '隐藏内容，悬停或聚焦以显示',
-    maskTitle: '悬停显示',
-    usedAttempts: (n) => `用了 ${n} 次猜中`,
-    saveScore: '保存',
-    namePlaceholder: '名字',
-    savedRank: (n) => `本机第 ${n + 1} 名`,
-    localBoard: '本机战绩榜',
-    noScores: '暂无记录',
-    attemptsUnit: '次',
-    rankCol: '名次',
-    nameCol: '名字',
-    scoreCol: '成绩'
+    maskTitle: '悬停显示'
   },
   en: {
     win: '🎉 Correct. Good job.',
     lose: '😢 Game over.',
-    reportBug: 'Report Bug',
     appearances: 'Appearances:',
     moreWorks: (count) => `... (${count} subjects total)`,
     tags: 'Tags:',
     summary: 'Intro:',
     maskAriaLabel: 'Hidden content. Hover or focus to reveal.',
-    maskTitle: 'Hover to reveal',
-    usedAttempts: (n) => `Guessed in ${n} attempts`,
-    saveScore: 'Save',
-    namePlaceholder: 'Name',
-    savedRank: (n) => `Local rank #${n + 1}`,
-    localBoard: 'Local leaderboard',
-    noScores: 'No records yet',
-    attemptsUnit: ' attempts',
-    rankCol: 'Rank',
-    nameCol: 'Name',
-    scoreCol: 'Score'
+    maskTitle: 'Hover to reveal'
   }
 };
 
-function GameEndPopup({ result, answer, onClose, locale = 'zh', attemptsUsed = null }) {
+function GameEndPopup({ result, answer, onClose, locale = 'zh' }) {
   const text = GAME_END_TEXT[locale] || GAME_END_TEXT.zh;
-  const [name, setName] = useState('');
-  const [savedRank, setSavedRank] = useState(null); // null=未保存, -1=未进前十
-  const [board, setBoard] = useState(() => getLocalLeaderboard());
-
-  const canSave = result === 'win' && typeof attemptsUsed === 'number' && attemptsUsed > 0;
-
-  const handleSave = () => {
-    const { entries, rank } = addLocalLeaderboardEntry(name, attemptsUsed);
-    setBoard(entries);
-    setSavedRank(rank);
-  };
 
   return (
     <div className="popup-overlay">
@@ -190,17 +154,6 @@ function GameEndPopup({ result, answer, onClose, locale = 'zh', attemptsUsed = n
                     )}
                   </div>
                 </a>
-                <div className="button-container">
-                  <div className="button-group-vertical">
-                    <button
-                      className="contribute-tag-btn"
-                      onClick={() => window.open('https://github.com/kennylimz/anime-character-guessr/issues/new', '_blank', 'noopener,noreferrer')}
-                    >
-                      {text.reportBug}
-                    </button>
-                  </div>
-                  <img src={subaruIcon} alt="" className="button-icon" />
-                </div>
               </div>
 
               {/* 角色出演作品 */}
@@ -239,56 +192,6 @@ function GameEndPopup({ result, answer, onClose, locale = 'zh', attemptsUsed = n
                 </div>
               )}
             </div>
-          </div>
-
-          {/* 本地战绩榜 */}
-          <div className="local-leaderboard" style={{ marginTop: '16px', borderTop: '1px solid rgba(0,0,0,0.1)', paddingTop: '12px' }}>
-            {canSave && savedRank === null && (
-              <div style={{ marginBottom: '10px' }}>
-                <div style={{ fontWeight: 'bold', marginBottom: '6px' }}>
-                  {text.usedAttempts(attemptsUsed)}
-                </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    placeholder={text.namePlaceholder}
-                    maxLength={12}
-                    style={{ flex: 1, padding: '6px 10px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.2)' }}
-                  />
-                  <button className="contribute-tag-btn" onClick={handleSave}>
-                    {text.saveScore}
-                  </button>
-                </div>
-              </div>
-            )}
-            {canSave && savedRank !== null && savedRank >= 0 && (
-              <div style={{ fontWeight: 'bold', marginBottom: '10px' }}>{text.savedRank(savedRank)}</div>
-            )}
-            <h3 style={{ marginBottom: '8px' }}>{text.localBoard}</h3>
-            {board.length === 0 ? (
-              <div style={{ opacity: 0.7, fontSize: '13px' }}>{text.noScores}</div>
-            ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                <thead>
-                  <tr>
-                    <th style={{ textAlign: 'left', padding: '4px 8px', borderBottom: '1px solid rgba(0,0,0,0.15)' }}>{text.rankCol}</th>
-                    <th style={{ textAlign: 'left', padding: '4px 8px', borderBottom: '1px solid rgba(0,0,0,0.15)' }}>{text.nameCol}</th>
-                    <th style={{ textAlign: 'right', padding: '4px 8px', borderBottom: '1px solid rgba(0,0,0,0.15)' }}>{text.scoreCol}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {board.map((entry, index) => (
-                    <tr key={`${entry.date}-${index}`} style={savedRank === index ? { background: 'rgba(102,126,234,0.12)', fontWeight: 'bold' } : undefined}>
-                      <td style={{ padding: '4px 8px' }}>{index + 1}</td>
-                      <td style={{ padding: '4px 8px' }}>{entry.name}</td>
-                      <td style={{ padding: '4px 8px', textAlign: 'right' }}>{entry.attemptsUsed}{text.attemptsUnit}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
           </div>
         </div>
       </div>

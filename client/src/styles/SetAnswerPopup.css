@@ -12,7 +12,7 @@
 }
 
 .set-answer-popup {
-  background-color: white;
+  background-color: var(--surface);
   padding: 20px;
   border-radius: 8px;
   width: 90%;
@@ -28,7 +28,7 @@
 .set-answer-popup h2 {
   text-align: center;
   margin: 0;
-  color: #333;
+  color: var(--text);
 }
 
 .search-container {
@@ -40,7 +40,7 @@
   display: flex;
   align-items: center;
   padding: 10px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border);
   border-radius: 4px;
   box-sizing: border-box;
 }
@@ -75,7 +75,7 @@
 
 .hints-container h3 {
   margin: 0;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 1.1em;
 }
 
@@ -88,13 +88,13 @@
 }
 
 .hint-input-group label {
-  color: #666;
+  color: var(--text-secondary);
   font-size: 0.9em;
 }
 
 .hint-input-group input {
   padding: 8px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border);
   border-radius: 4px;
   font-size: 1em;
   width: 100%;

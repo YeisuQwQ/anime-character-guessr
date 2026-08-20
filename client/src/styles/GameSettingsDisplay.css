@@ -3,7 +3,7 @@
   width: 100%;
   max-width: 800px;
   margin: 1rem auto;
-  background-color: white;
+  background-color: var(--surface);
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
@@ -14,8 +14,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 15px 20px;
-  background-color: #f1f5f9;
-  border-bottom: 1px solid #e2e8f0;
+  background-color: var(--surface-2);
+  border-bottom: 1px solid var(--border);
 }
 
 .settings-display-header.collapsible {
@@ -24,18 +24,18 @@
 }
 
 .settings-display-header.collapsible:hover {
-  background-color: #e2e8f0;
+  background-color: var(--surface-3);
 }
 
 .settings-display-header h3 {
   margin: 0;
-  color: #334155;
+  color: var(--text);
   font-size: 18px;
   font-weight: 600;
 }
 
 .expand-icon {
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 14px;
   transition: transform 0.3s ease;
 }
@@ -50,7 +50,7 @@
 
 .settings-group {
   padding: 16px 20px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--border);
 }
 
 .settings-group:last-child {
@@ -59,7 +59,7 @@
 
 .settings-group h4 {
   margin: 0 0 12px 0;
-  color: #475569;
+  color: var(--text-secondary);
   font-size: 16px;
   font-weight: 500;
   border-left: 3px solid #3b82f6;
@@ -79,13 +79,13 @@
 }
 
 .setting-label {
-  color: #64748b;
+  color: var(--text-muted);
   font-size: 14px;
   margin-bottom: 2px;
 }
 
 .setting-value {
-  color: #334155;
+  color: var(--text);
   font-size: 16px;
   font-weight: 500;
 }
@@ -194,7 +194,7 @@
 }
 
 .mode-badge.global-pick {
-  background-color: #ef4444;
+  background-color: var(--danger);
   color: white;
 }
 
