@@ -1,6 +1,5 @@
 import '../styles/popups.css';
 import { useState, useEffect } from 'react';
-import { submitCharacterTags, proposeCustomTags, submitFeedbackTags } from '../utils/db';
 import { idToTags } from '../data/id_tags.js';
 
 const TAG_CONTRIBUTION_TEXT = {
@@ -145,35 +144,9 @@ function TagContributionPopup({ character, onClose, locale = 'zh' }) {
   };
 
   const handleSubmit = async () => {
-    try {
-      setIsSubmitting(true);
-      
-      // Submit both selected and custom tags if they exist
-      const submitPromises = [];
-      
-      if (selectedTags.length > 0) {
-        submitPromises.push(submitCharacterTags(character.id, selectedTags));
-      }
-      
-      if (customTags.length > 0) {
-        submitPromises.push(proposeCustomTags(character.id, customTags));
-      }
-
-      // Submit tag feedback if there are any votes
-      if (upvotedTags.size > 0 || downvotedTags.size > 0) {
-        submitPromises.push(submitFeedbackTags(character.id, upvotedTags, downvotedTags));
-      }
-      
-      await Promise.all(submitPromises);
-      
-      alert(text.thanks);
-      onClose();
-    } catch (error) {
-      console.error('Error submitting tags:', error);
-      alert(text.submitFailed);
-    } finally {
-      setIsSubmitting(false);
-    }
+    // 纯前端版本，标签贡献功能已禁用
+    alert('纯前端版本暂不支持标签贡献功能');
+    onClose();
   };
 
   const tagGroups = {

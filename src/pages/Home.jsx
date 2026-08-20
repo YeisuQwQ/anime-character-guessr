@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import '../styles/Home.css';
-import WelcomePopup from '../components/WelcomePopup';
 import { enableBgmAccelAfterBlock, getBgmApiUrl, hasBgmAccelUrl } from '../utils/bgmApi.js';
 
 const HOME_TEXT = {

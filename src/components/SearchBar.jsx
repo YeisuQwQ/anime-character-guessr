@@ -3,7 +3,6 @@ import axios from '../utils/cached-axios';
 import { fixImageUrl } from '../utils/imageUrl.js';
 import { searchSubjects, getCharactersBySubjectId, getCharacterDetails } from '../utils/bangumi';
 import '../styles/search.css';
-import { submitGuessCharacterCount } from '../utils/db';
 import { getBgmApiUrl } from '../utils/bgmApi.js';
 
 const SEARCH_TEXT = {
@@ -343,7 +342,8 @@ function SearchBar({ onCharacterSelect, isGuessing, gameEnd, subjectSearch, game
 
   const handleCharacterSelect = (character) => {
     if (!finishInit) return;
-    submitGuessCharacterCount(character.id, character.nameCn || character.name);
+    // 纯前端版本，统计功能已禁用
+    // submitGuessCharacterCount(character.id, character.nameCn || character.name);
     onCharacterSelect(character);
     setSearchQuery('');
     setSearchResults([]);
