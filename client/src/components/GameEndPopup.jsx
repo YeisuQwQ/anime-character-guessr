@@ -1,0 +1,299 @@
+import '../styles/popups.css';
+import subaruIcon from '/assets/subaru.jpg';
+import { useState } from 'react';
+import { idToTags } from '../data/id_tags';
+import { getLocalLeaderboard, addLocalLeaderboardEntry } from '../utils/localLeaderboard';
+
+function renderSummaryWithTags(summary, text) {
+  if (!summary || typeof summary !== 'string') return summary;
+
+  const nodes = [];
+  let i = 0;
+  let key = 0;
+
+  const pushText = (text) => {
+    if (!text) return;
+    nodes.push(<span key={`t-${key++}`}>{text}</span>);
+  };
+
+  while (i < summary.length) {
+    const nextMask = summary.indexOf('[mask]', i);
+    const nextUrl = summary.indexOf('[url=', i);
+    const candidates = [nextMask, nextUrl].filter((n) => n !== -1);
+    const next = candidates.length ? Math.min(...candidates) : -1;
+
+    if (next === -1) {
+      pushText(summary.slice(i));
+      break;
+    }
+
+    if (next > i) {
+      pushText(summary.slice(i, next));
+    }
+
+    // [mask]...[/mask]
+    if (next === nextMask) {
+      const start = next + '[mask]'.length;
+      const end = summary.indexOf('[/mask]', start);
+      if (end === -1) {
+        // 不完整标签：按纯文本处理剩余内容
+        pushText(summary.slice(next));
+        break;
+      }
+      const inner = summary.slice(start, end);
+      nodes.push(
+        <span
+          key={`m-${key++}`}
+          className="summary-mask"
+          tabIndex={0}
+          aria-label={text.maskAriaLabel}
+          title={text.maskTitle}
+        >
+          {inner}
+        </span>
+      );
+      i = end + '[/mask]'.length;
+      continue;
+    }
+
+    // [url=https://...]text[/url]
+    if (next === nextUrl) {
+      const closeBracket = summary.indexOf(']', next);
+      if (closeBracket === -1) {
+        pushText(summary.slice(next));
+        break;
+      }
+      const urlRaw = summary.slice(next + '[url='.length, closeBracket).trim();
+      const end = summary.indexOf('[/url]', closeBracket + 1);
+      if (end === -1) {
+        pushText(summary.slice(next));
+        break;
+      }
+      const label = summary.slice(closeBracket + 1, end);
+      const isSafeHttp = /^https?:\/\//i.test(urlRaw);
+      if (isSafeHttp) {
+        nodes.push(
+          <a
+            key={`u-${key++}`}
+            className="summary-link"
+            href={urlRaw}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {label}
+          </a>
+        );
+      } else {
+        // 非 http(s) 链接：降级为纯文本，避免注入
+        pushText(label);
+      }
+      i = end + '[/url]'.length;
+      continue;
+    }
+
+    // 兜底：避免死循环
+    pushText(summary.slice(next, next + 1));
+    i = next + 1;
+  }
+
+  return nodes;
+}
+
+const GAME_END_TEXT = {
+  zh: {
+    win: '🎉 给你猜对了，有点东西',
+    lose: '😢 已经结束咧',
+    reportBug: '反馈Bug',
+    appearances: '出演作品：',
+    moreWorks: (count) => `...等 ${count} 部作品`,
+    tags: '角色标签：',
+    summary: '角色简介：',
+    maskAriaLabel: '隐藏内容，悬停或聚焦以显示',
+    maskTitle: '悬停显示',
+    usedAttempts: (n) => `用了 ${n} 次猜中`,
+    saveScore: '保存',
+    namePlaceholder: '名字',
+    savedRank: (n) => `本机第 ${n + 1} 名`,
+    localBoard: '本机战绩榜',
+    noScores: '暂无记录',
+    attemptsUnit: '次',
+    rankCol: '名次',
+    nameCol: '名字',
+    scoreCol: '成绩'
+  },
+  en: {
+    win: '🎉 Correct. Good job.',
+    lose: '😢 Game over.',
+    reportBug: 'Report Bug',
+    appearances: 'Appearances:',
+    moreWorks: (count) => `... (${count} subjects total)`,
+    tags: 'Tags:',
+    summary: 'Intro:',
+    maskAriaLabel: 'Hidden content. Hover or focus to reveal.',
+    maskTitle: 'Hover to reveal',
+    usedAttempts: (n) => `Guessed in ${n} attempts`,
+    saveScore: 'Save',
+    namePlaceholder: 'Name',
+    savedRank: (n) => `Local rank #${n + 1}`,
+    localBoard: 'Local leaderboard',
+    noScores: 'No records yet',
+    attemptsUnit: ' attempts',
+    rankCol: 'Rank',
+    nameCol: 'Name',
+    scoreCol: 'Score'
+  }
+};
+
+function GameEndPopup({ result, answer, onClose, locale = 'zh', attemptsUsed = null }) {
+  const text = GAME_END_TEXT[locale] || GAME_END_TEXT.zh;
+  const [name, setName] = useState('');
+  const [savedRank, setSavedRank] = useState(null); // null=未保存, -1=未进前十
+  const [board, setBoard] = useState(() => getLocalLeaderboard());
+
+  const canSave = result === 'win' && typeof attemptsUsed === 'number' && attemptsUsed > 0;
+
+  const handleSave = () => {
+    const { entries, rank } = addLocalLeaderboardEntry(name, attemptsUsed);
+    setBoard(entries);
+    setSavedRank(rank);
+  };
+
+  return (
+    <div className="popup-overlay">
+      <div className="popup-content">
+        <button className="popup-close" onClick={onClose}><i className="fas fa-xmark"></i></button>
+        <div className="popup-header">
+          <h2>{result === 'win' ? text.win : text.lose}</h2>
+        </div>
+        <div className="popup-body">
+          <div className="answer-character">
+            <img
+              src={answer.image}
+              alt={answer.name}
+              className="answer-character-image"
+            />
+            <div className="answer-character-info">
+              <div className="character-name-container">
+                <a
+                  href={`https://bgm.tv/character/${answer.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="character-link"
+                  style={{ display: 'block', textAlign: 'left' }}
+                >
+                  <div className="answer-character-name" style={{ textAlign: 'left' }} translate="no">{answer.name}</div>
+                  <div className={locale === 'en' ? 'answer-character-name-en' : 'answer-character-name-cn'} style={{ textAlign: 'left' }}>
+                    {locale === 'en' && answer.nameEn && answer.nameEn !== answer.nameCn ? (
+                      <span translate="no">{answer.nameEn}</span>
+                    ) : (
+                      <span>{locale === 'en' ? (answer.nameEn || answer.nameCn) : answer.nameCn}</span>
+                    )}
+                  </div>
+                </a>
+                <div className="button-container">
+                  <div className="button-group-vertical">
+                    <button
+                      className="contribute-tag-btn"
+                      onClick={() => window.open('https://github.com/kennylimz/anime-character-guessr/issues/new', '_blank', 'noopener,noreferrer')}
+                    >
+                      {text.reportBug}
+                    </button>
+                  </div>
+                  <img src={subaruIcon} alt="" className="button-icon" />
+                </div>
+              </div>
+
+              {/* 角色出演作品 */}
+              {answer.appearances && answer.appearances.length > 0 && (
+                <div className="answer-appearances">
+                  <h3>{text.appearances}</h3>
+                  <ul className="appearances-list">
+                    {((locale === 'en' ? answer.appearances : (answer.appearancesCn || answer.appearances)) || [])
+                      .slice(0, 3).map((appearance, index) => (
+                        <li key={index}>{appearance}</li>
+                    ))}
+                    {answer.appearances.length > 3 && (
+                      <li>{text.moreWorks(answer.appearances.length)}</li>
+                    )}
+                  </ul>
+                </div>
+              )}
+
+              {/* 角色标签 */}
+              {idToTags[answer.id] && idToTags[answer.id].length > 0 && (
+                <div className="answer-tags">
+                  <h3>{text.tags}</h3>
+                  <div className="tags-container" lang={locale === 'en' ? 'zh-CN' : undefined} translate={locale === 'en' ? 'yes' : undefined}>
+                    {idToTags[answer.id].map((tag, index) => (
+                      <span key={index} className="character-tag">{tag}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 角色简介 */}
+              {answer.summary && (
+                <div className="answer-summary">
+                  <h3>{text.summary}</h3>
+                  <div className="summary-content">{renderSummaryWithTags(answer.summary, text)}</div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 本地战绩榜 */}
+          <div className="local-leaderboard" style={{ marginTop: '16px', borderTop: '1px solid rgba(0,0,0,0.1)', paddingTop: '12px' }}>
+            {canSave && savedRank === null && (
+              <div style={{ marginBottom: '10px' }}>
+                <div style={{ fontWeight: 'bold', marginBottom: '6px' }}>
+                  {text.usedAttempts(attemptsUsed)}
+                </div>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder={text.namePlaceholder}
+                    maxLength={12}
+                    style={{ flex: 1, padding: '6px 10px', borderRadius: '6px', border: '1px solid rgba(0,0,0,0.2)' }}
+                  />
+                  <button className="contribute-tag-btn" onClick={handleSave}>
+                    {text.saveScore}
+                  </button>
+                </div>
+              </div>
+            )}
+            {canSave && savedRank !== null && savedRank >= 0 && (
+              <div style={{ fontWeight: 'bold', marginBottom: '10px' }}>{text.savedRank(savedRank)}</div>
+            )}
+            <h3 style={{ marginBottom: '8px' }}>{text.localBoard}</h3>
+            {board.length === 0 ? (
+              <div style={{ opacity: 0.7, fontSize: '13px' }}>{text.noScores}</div>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr>
+                    <th style={{ textAlign: 'left', padding: '4px 8px', borderBottom: '1px solid rgba(0,0,0,0.15)' }}>{text.rankCol}</th>
+                    <th style={{ textAlign: 'left', padding: '4px 8px', borderBottom: '1px solid rgba(0,0,0,0.15)' }}>{text.nameCol}</th>
+                    <th style={{ textAlign: 'right', padding: '4px 8px', borderBottom: '1px solid rgba(0,0,0,0.15)' }}>{text.scoreCol}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {board.map((entry, index) => (
+                    <tr key={`${entry.date}-${index}`} style={savedRank === index ? { background: 'rgba(102,126,234,0.12)', fontWeight: 'bold' } : undefined}>
+                      <td style={{ padding: '4px 8px' }}>{index + 1}</td>
+                      <td style={{ padding: '4px 8px' }}>{entry.name}</td>
+                      <td style={{ padding: '4px 8px', textAlign: 'right' }}>{entry.attemptsUsed}{text.attemptsUnit}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default GameEndPopup;
